@@ -5,13 +5,14 @@ import re
 import io
 import base64
 import array
+import random
+
 
 
 
 '''
 next step : 
-inverser ville 1 et ville2
-ajouter option ville 3
+probleme sur positionnement villes
 
 '''
 
@@ -26,16 +27,20 @@ def get_days_of_service(bus_number, direction):
         try:
             while True:  # Boucle interne pour gérer les jours invalides
                 jours_map = {
-                    "Lundi": 1,
-                    "Mardi": 2,
-                    "Mercredi": 3,
-                    "Jeudi": 4,
-                    "Vendredi": 5,
-                    "Samedi": 6,
-                    "Dimanche": 7
+                    "Monday": 1,
+                    "Tuesday": 2,
+                    "Wednesday": 3,
+                    "Thursday": 4,
+                    "Friday": 5,
+                    "Saturday": 6,
+                    "Sunday": 7
                 }
+
                 jours_selectionnes = st.multiselect(f"Quel(s) jour(s) le bus {bus_number} roule de {direction} ?", list(jours_map.keys()))
                 days = []
+                
+                #if "Everyday" in jours_selectionnes:
+                #    days = list(jours_map.keys())
                 for jour in jours_selectionnes:
                     days.append(jours_map[jour])
                 days = array.array('I', [jours_map[jour] for jour in jours_selectionnes])
@@ -123,7 +128,7 @@ def horaires():
             while True:
                 try:
                     key_1 = get_unique_key(f'heure_depart_{i}_{j}')
-                    horaire_depart = st.time_input(f"Horaire de départ de {villes[f'ville_{i+1}']} à {villes[f'ville_{j+1}']}: ", key=key_1)
+                    horaire_depart = st.time_input(f"Horaire de départ de {villes[f'ville_{i+1}']} à {villes[f'ville_{j+1}']}: ", key=key_1, value = None)
                     st.write("Durée du trajet :")
                     col1, col2 = st.columns(2)
                     if horaire_depart is not None:
@@ -146,7 +151,7 @@ def horaires():
         for j in range(i+1, num_villes):
             while True:
                 try:
-                    horaire_depart = st.time_input(f" Horaire de départ de {villes[f'ville_{j+1}']} à {villes[f'ville_{i+1}']}: ")
+                    horaire_depart = st.time_input(f" Horaire de départ de {villes[f'ville_{j+1}']} à {villes[f'ville_{i+1}']}: ", key=get_unique_key(f"time_input_{i}{j}"), value = None)
                     col1, col2 = st.columns(2)
                     if horaire_depart is not None:
                         heures_key = get_unique_key(f"heures_{j}_{i}")
@@ -175,101 +180,6 @@ def horaires():
 
     return horaires_trajets, num_buses, num_villes, villes
 
-
-
-def plot_graphicage_and_table_2_cities(arrivees_villes, departs_villes, villes, horaires_trajets, num_buses, days_of_services):
-    
-    colors = ['blue', 'red', 'green', 'orange', 'purple', 'pink', 'brown']
-    days_of_week = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche', 'Lundi']
-    midnight_dates = []
-    
-    dates_noon = []
-    start_date = datetime.now() + timedelta(days=(7 - datetime.now().weekday()))
-    start_date += timedelta(days=(7 - start_date.weekday()))  # Pour obtenir le prochain lundi
-    dates = [start_date + timedelta(days=i) for i in range(8)]  # Générer jusqu'au jour 8 inclus
-    
-    for date in dates:
-        midnight_dates.append(date.replace(hour=0, minute=0, second=0, microsecond=0))
-        dates_noon.append(date.replace(hour=12, minute=0, second=0, microsecond=0))
-    
-    fig, ax = plt.subplots(figsize=(20, 15))
-
-    third_element_arrivees = list(arrivees_villes.keys())[0][2]
-    third_element_arrivees_2 = list(arrivees_villes.keys())[1][2]
-    
-    for key, value in arrivees_villes.items():
-        if third_element_arrivees in key:
-            if key[1] == 1:
-                for i in range(len(arrivees_villes[key])):
-                    if departs_villes[key] != '':
-                        ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                        ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
-                        plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 1), colors[key[0]-1])
-                        for i, time in enumerate(departs_villes[key]):
-                            ax.annotate(f"{time.strftime('%H:%M')}",
-                                        (time, -1.07),
-                                        textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
-                        for i, time in enumerate(arrivees_villes[key]):
-                            ax.annotate(f"{time.strftime('%H:%M')}",
-                                        (time, 1.01),
-                                        textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
-
-        if third_element_arrivees_2 in key:
-            for i in range(len(arrivees_villes[key])):
-                if departs_villes[key] != '':
-                    ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                    ax.plot([arrivees_villes[key], arrivees_villes[key]], [1, -1], linestyle='dotted', color='grey', alpha=0.5)
-                    ax.plot([departs_villes[key], departs_villes[key]], [1, -1], linestyle='dotted', color='grey', alpha=0.5)
-
-                    plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], -1), colors[key[0]-1])
-                    for i, time in enumerate(departs_villes[key]):
-                        ax.annotate(f"{time.strftime('%H:%M')}",
-                                    (time, 1.03),
-                                    textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
-                    for i, time in enumerate(arrivees_villes[key]):
-                        ax.annotate(f"{time.strftime('%H:%M')}",
-                                    (time, -1.07),
-                                    textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
-    
-    for date in midnight_dates:
-        ax.axvline(x=date, color='lightblue', linestyle='-', linewidth=1)
-    
-    plt.yticks([-1, 1], [f'{villes["ville_1"]}', f'{villes["ville_2"]}'])
-    plt.xticks(dates_noon, [days_of_week[date.weekday()]  for date in dates], fontsize=14, ha='center', va='center')
-    ax.set_xlim(midnight_dates[0], dates_noon[-1])
-    plt.tick_params(axis='x', which='both', bottom=False, top=True, labelbottom=False, labeltop=True, colors='coral')
-
-    for spine in ax.spines.values():
-        spine.set_visible(False)
-
-    title_color = 'navy'
-    plt.title(f"Graphicage {villes['ville_1']} - {villes['ville_2']}", y=1.1, color=title_color)
-
-    # Tableau
-    table = [['' for _ in range(len(horaires_trajets) + 1)] for _ in range(num_buses + 1)]
-    table_colors = [['black' for _ in range(len(horaires_trajets) + 1)] for _ in range(num_buses + 1)]
-    headers = list(horaires_trajets.keys())
-    table[0][1:] = headers
-    for i in range(num_buses):
-        table[i + 1][0] = f'Bus {i + 1}'
-        for j, key in enumerate(headers):
-            table[i + 1][j + 1] = days_of_services.get((i + 1, key), '')
-            table_colors[i + 1][j + 1] = colors[i]
-    cell_width = 4
-    cell_height = 4
-    table = plt.table(cellText=table, cellLoc='center', loc='lower right', bbox=[[1.1, 0.5, cell_width, cell_height] for _ in range(num_buses + 1) for _ in range(len(horaires_trajets) + 1)], edges='closed') 
-    table.auto_set_font_size(False)  
-    table.set_fontsize(18)  
-
-    fig.set_size_inches(18*0.9, 10*0.9)
-    plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
-    plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png", bbox_inches='tight')
-    plt.close()
-    return fig, table
-    
-
 def get_days_of_service_all_buses():
 
     horaires_trajets, num_buses, num_villes, villes = horaires()
@@ -279,7 +189,7 @@ def get_days_of_service_all_buses():
     directions = [key for key, value in horaires_trajets.items()]
 
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'pink', 'brown']
-    days_of_week = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche', 'Lundi']
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thirsday', 'Friday', 'Saturday', 'Sunday', 'Monday']
     midnight_dates = []
     
     dates_noon = []
@@ -369,75 +279,263 @@ def get_days_of_service_all_buses():
             midnight_dates.append(date.replace(hour=0, minute=0, second=0, microsecond=0))
             dates_noon.append(date.replace(hour=12, minute=0, second=0, microsecond=0))
         
-        fig, ax = plt.subplots(figsize=(20, 15))
 
-        third_element_arrivees = list(arrivees_villes.keys())[0][2]
-        third_element_arrivees_2 = list(arrivees_villes.keys())[1][2]
-        
-        for key, value in arrivees_villes.items():
-            if third_element_arrivees in key:
-                if key[1] == 1:
+
+        if num_villes == 2:
+            fig, ax = plt.subplots(figsize=(20, 15))
+
+            third_element_arrivees = list(arrivees_villes.keys())[0][2]
+            third_element_arrivees_2 = list(arrivees_villes.keys())[1][2]
+            
+            for key, value in arrivees_villes.items():
+                if third_element_arrivees_2 in key:
+                    if key[1] == 1:
+                        for i in range(len(arrivees_villes[key])):
+                            if departs_villes[key] != '':
+                                ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                                ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
+                                ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                                ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                                plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 1), colors[key[0]-1])
+
+                                for i, time in enumerate(departs_villes[key]):
+                                    ax.annotate(f"{time.strftime('%H:%M')}",
+                                                (time, -1.07),
+                                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                                for i, time in enumerate(arrivees_villes[key]):
+                                    ax.annotate(f"{time.strftime('%H:%M')}",
+                                                (time, 1.01),
+                                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+
+                if third_element_arrivees in key:
                     for i in range(len(arrivees_villes[key])):
                         if departs_villes[key] != '':
-                            ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                            ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                            ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                            ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                            ax.scatter(departs_villes[key], [1]*len(departs_villes[key]),  color=colors[key[0]-1])
+                            ax.plot([arrivees_villes[key], arrivees_villes[key]], [1, -1], linestyle='dotted', color='grey', alpha=0.5)
                             ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                            plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], -1), colors[key[0]-1])
+                            for i, time in enumerate(departs_villes[key]):
+                                ax.annotate(f"{time.strftime('%H:%M')}",
+                                            (time, 1.03),
+                                            textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                            for i, time in enumerate(arrivees_villes[key]):
+                                ax.annotate(f"{time.strftime('%H:%M')}",
+                                            (time, -1.07),
+                                            textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+            
+            for date in midnight_dates:
+                ax.axvline(x=date, color='lightblue', linestyle='-', linewidth=1)
+            
+            plt.yticks([-1, 1], [f'{villes["ville_2"]}', f'{villes["ville_1"]}'], fontsize = 20)
+            plt.xticks(dates_noon, [days_of_week[date.weekday()]  for date in dates], fontsize=20, ha='center', va='center')
+            ax.set_xlim(midnight_dates[0], dates_noon[-1])
+            plt.tick_params(axis='x', which='both', bottom=False, top=True, labelbottom=False, labeltop=True, colors='coral')
+            for spine in ax.spines.values():
+                spine.set_visible(False)
+
+            title_color = 'navy'
+            #plt.title(f"Graphicage {villes['ville_1']} - {villes['ville_2']}", y=1.1, color=title_color)
+
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png')
+            buffer.seek(0)
+            st.image(buffer, use_column_width=True, caption='Graphicage Image')
+            
+
+            fig.set_size_inches(18*0.9, 10*0.9)
+            plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
+            plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png", bbox_inches='tight')
+            plt.close()
+
+            filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png"  # Define the filename for the graph image
+            image_bytes = buffer.getvalue()
+            st.markdown(get_image_download_link(image_bytes, filename=filename), unsafe_allow_html=True)
+
+
+        if num_villes == 3:
+            fig, ax = plt.subplots(figsize=(20, 15))
+
+            if list(departs_villes.values())[0] != '':
+                ville_1_2 = list(departs_villes.keys())[0][2]
+            else: 
+                ville_1_2 = 'not a key'
+            if list(departs_villes.values())[3] != '':
+                ville_2_1 = list(departs_villes.keys())[3][2]
+            else:
+                ville_2_1 = 'not a key'
+            if list(departs_villes.values())[1] != '':
+                ville_1_3 = list(departs_villes.keys())[1][2]
+            else:
+                ville_1_3 = 'not a key'
+            if list(departs_villes.values())[4] != '':
+                ville_3_1 = list(departs_villes.keys())[4][2]
+            else:
+                ville_3_1 = 'not a key'
+            if list(departs_villes.values())[2] != '':
+                ville_2_3 = list(departs_villes.keys())[2][2]
+            else:
+                ville_2_3 = 'not a key'
+            if list(departs_villes.values())[5] != '':
+                ville_3_2 = list(departs_villes.keys())[5][2]
+            else:
+                ville_3_2 = 'not a key'
+
+            # Afficher la première valeur des clés contenant cet élément
+            for key, value in departs_villes.items():
+                if ville_3_2 in key:
+                    if value != '':
+                        ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        ax.scatter(arrivees_villes[key], [0]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        for i in range(len(departs_villes[key])):
+                            plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 0), colors[key[0]-1])
+                    
+                        for i, time in enumerate(departs_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                        (time, -1.02),
+                                textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
+                        
+                        for i, time in enumerate(arrivees_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                (time, 0.01),
+                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+
+
+                if ville_2_3 in key:
+                    if value != '':
+                        ax.scatter(departs_villes[key], [0]*len(departs_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        for i in range(len(departs_villes[key])):
+                            plot_arrow(ax, (departs_villes[key][i], 0), (arrivees_villes[key][i], -1), colors[key[0]-1])
+
+                        for i, time in enumerate(departs_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                        (time, 0.02),
+                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                        
+                        for i, time in enumerate(arrivees_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                (time, -1.02),
+                                textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
+
+
+                if ville_3_1 in key:
+                    if value != '':
+                        ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        for i in range(len(departs_villes[key])):
                             plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 1), colors[key[0]-1])
+                    
+
+                        for i, time in enumerate(departs_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                        (time, -1.06),
+                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                        
+                        for i, time in enumerate(arrivees_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                (time, 1.07),
+                                textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
+            
+                if ville_1_3 in key:
+                    if value != '':
+                        ax.scatter(departs_villes[key], [1]*len(departs_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        for i in range(len(departs_villes[key])):
+                            plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], -1), colors[key[0]-1])
+
+                        for i, time in enumerate(departs_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                        (time, 1.04),
+                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                        
+                        for i, time in enumerate(arrivees_villes[key]):
+                            ax.annotate(f"{time.strftime('%H:%M')}",
+                                (time, -1.03),
+                                textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
+
+                if ville_2_1 in key:
+                        if value != '':
+                            ax.scatter(departs_villes[key], [0]*len(departs_villes[key]),  color=colors[key[0]-1])
+                            ax.plot([departs_villes[key], departs_villes[key]], [0, 1], linestyle='dotted', color='grey', alpha=0.5)
+                            ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                            ax.plot([arrivees_villes[key], arrivees_villes[key]], [0, 1], linestyle='dotted', color='grey', alpha=0.5)
+                            for i in range(len(departs_villes[key])):
+                                plot_arrow(ax, (departs_villes[key][i], 0), (arrivees_villes[key][i], 1), colors[key[0]-1])
+                        
 
                             for i, time in enumerate(departs_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                            (time, -1.07),
-                                            textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
+                                            (time, -0.02),
+                                    textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                            
                             for i, time in enumerate(arrivees_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                            (time, 1.01),
-                                            textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
+                                    (time, 1.06),
+                                    textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
-            if third_element_arrivees_2 in key:
-                for i in range(len(arrivees_villes[key])):
-                    if departs_villes[key] != '':
-                        ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                if ville_1_2 in key:
+                    if value != '':
                         ax.scatter(departs_villes[key], [1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [1, -1], linestyle='dotted', color='grey', alpha=0.5)
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
-                        plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], -1), colors[key[0]-1])
+                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        ax.scatter(arrivees_villes[key], [0]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        for i in range(len(departs_villes[key])):
+                            plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], 0), colors[key[0]-1])
+
+
                         for i, time in enumerate(departs_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
                                         (time, 1.03),
-                                        textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
+                                textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
+                        
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                        (time, -1.07),
-                                        textcoords="offset points", xytext=(0, 5), ha='center', fontsize=6)
-        
-        for date in midnight_dates:
-            ax.axvline(x=date, color='lightblue', linestyle='-', linewidth=1)
-        
-        plt.yticks([-1, 1], [f'{villes["ville_1"]}', f'{villes["ville_2"]}'])
-        plt.xticks(dates_noon, [days_of_week[date.weekday()]  for date in dates], fontsize=14, ha='center', va='center')
-        ax.set_xlim(midnight_dates[0], dates_noon[-1])
-        plt.tick_params(axis='x', which='both', bottom=False, top=True, labelbottom=False, labeltop=True, colors='coral')
-        for spine in ax.spines.values():
-            spine.set_visible(False)
+                                (time, -0.03),
+                                textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
-        title_color = 'navy'
-        plt.title(f"Graphicage {villes['ville_1']} - {villes['ville_2']}", y=1.1, color=title_color)
+                
+            plt.xticks(dates_noon, [days_of_week[date.weekday()]  for date in dates], fontsize = 20, ha='center', va='center')
+            ax.set_xlim(midnight_dates[0], dates_noon[-1])
+            plt.tick_params(axis='x', which='both', bottom=False, top=True, labelbottom=False, labeltop=True, colors = 'coral')
+            #plt.title(f"Graphicage {villes['ville_1']} - {villes['ville_2']} - {villes['ville_3']}" , y=1.1)  # Déplacer le titre plus haut
+            for spine in ax.spines.values():
+                spine.set_visible(False)  # Désactiver les bords du graphique
+            plt.yticks([-1, 0, 1], [f'{villes['ville_3']}', f'{villes['ville_2']}', f'{villes['ville_1']}'], fontsize = 20)
+            days_to_next_monday = (7 - start_date.weekday()) % 7  # Calculate days to the next Monday
+            start_date = datetime.now() + timedelta(days=(7 - datetime.now().weekday()))
+            dates = [start_date + timedelta(days=i) for i in range(8)]  # Générer jusqu'au jour 8 inclus
+            for date in midnight_dates:
+                ax.axvline(x=date, color='lightblue', linestyle='-', linewidth=1)  # Modifier la couleur et le style selon vos préférences
 
-        buffer = io.BytesIO()
-        plt.savefig(buffer, format='png')
-        buffer.seek(0)
-        st.image(buffer, use_column_width=True, caption='Graphicage Image')
-        
+            title_color = 'navy'
 
-        fig.set_size_inches(18*0.9, 10*0.9)
-        plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
-        plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png", bbox_inches='tight')
-        plt.close()
+            buffer = io.BytesIO()
+            plt.savefig(buffer, format='png')
+            buffer.seek(0)
+            st.image(buffer, use_column_width=True, caption='Graphicage Image')
+            
 
-        filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png"  # Define the filename for the graph image
-        image_bytes = buffer.getvalue()
-        st.markdown(get_image_download_link(image_bytes, filename=filename), unsafe_allow_html=True)
+            fig.set_size_inches(18*0.9, 10*0.9)
+            plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
+            plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png", bbox_inches='tight')
+            plt.close()
+
+            filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']} - {villes['ville_3']}.png"  # Define the filename for the graph image
+            image_bytes = buffer.getvalue()
+            st.markdown(get_image_download_link(image_bytes, filename=filename), unsafe_allow_html=True)
+
+
+
+
 
     
 
