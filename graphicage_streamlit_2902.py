@@ -9,14 +9,6 @@ import random
 
 
 
-
-'''
-next step : 
-probleme sur positionnement villes
-
-'''
-
-
 def validate_duration_format(duration_str):
     # Use regular expression to validate HH:MM format for duration
     return re.match(r'^([0-9]|[0-9][0-9]|[1-9][0-9][0-9]+):([0-5]\d)$', duration_str)
