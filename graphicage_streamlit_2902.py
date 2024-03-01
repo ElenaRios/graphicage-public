@@ -509,7 +509,7 @@ def get_days_of_service_all_buses():
             #plt.title(f"Graphicage {villes['ville_1']} - {villes['ville_2']} - {villes['ville_3']}" , y=1.1)  # Déplacer le titre plus haut
             for spine in ax.spines.values():
                 spine.set_visible(False)  # Désactiver les bords du graphique
-            plt.yticks([-1, 0, 1], [f'{villes['ville_3']}', f'{villes['ville_2']}', f'{villes['ville_1']}'], fontsize = 20)
+            plt.yticks([-1, 0, 1], [f"{villes['ville_3']}", f"{villes['ville_2']}", f"{villes['ville_1']}"], fontsize=20)
             days_to_next_monday = (7 - start_date.weekday()) % 7  # Calculate days to the next Monday
             start_date = datetime.now() + timedelta(days=(7 - datetime.now().weekday()))
             dates = [start_date + timedelta(days=i) for i in range(8)]  # Générer jusqu'au jour 8 inclus
