@@ -7,7 +7,7 @@ import base64
 import array
 import random
 
-
+###### ATTENTION PROBLEME FLECHES 3 VILLES
 
 def validate_duration_format(duration_str):
     # Use regular expression to validate HH:MM format for duration
