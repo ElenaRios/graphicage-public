@@ -76,7 +76,7 @@ def number_buses():
 def graphicage_hlp():
     while True:
         try:
-            choice = st.radio("How many stops ? 🚏", options=[2, 3], format_func=lambda x: f"{x}")
+            choice = st.radio("How many cities ? 🚏", options=[2, 3], format_func=lambda x: f"{x}")
             #st.write("Choix sélectionné :", choice)
             if choice == 2:
                 num_villes = 2
