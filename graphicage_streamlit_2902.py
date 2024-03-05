@@ -7,7 +7,9 @@ import base64
 import array
 import random
 
-st.write("ATTENTION PROBLEME FLECHES 3 VILLES")
+
+# LAST UPDATE 05/03
+
 
 def validate_duration_format(duration_str):
     # Use regular expression to validate HH:MM format for duration
@@ -60,9 +62,9 @@ def plot_arrow(ax, start, end, color):
 def number_buses():
     while True:
         try:
-            num_buses = st.slider("Entrez le nombre de bus :", min_value=1, max_value=10, value=1, step=1)
+            num_buses = st.slider("Number of buses 🚌:", min_value=1, max_value=10, value=1, step=1)
 
-            st.write("Nombre de bus :", num_buses)
+            #st.sidebar.write("Number of buses 🚌 :", num_buses)
             print("\n")
             return num_buses
         except ValueError:
@@ -71,8 +73,8 @@ def number_buses():
 def graphicage_hlp():
     while True:
         try:
-            choice = st.radio("Graphique avec 2 ou 3 villes ?", options=[2, 3])
-            st.write("Choix sélectionné :", choice)
+            choice = st.radio("How many stops ? 🚏", options=[2, 3], format_func=lambda x: f"{x}")
+            #st.write("Choix sélectionné :", choice)
             if choice == 2:
                 num_villes = 2
                 return num_villes
@@ -111,22 +113,23 @@ def horaires():
     villes = {}
     horaires_trajets = {}
 
-    st.write("Insérez les villes dans l'ordre")
+    st.write("<div style='font-size:30px;'><b> 🚏 Stops</b></div>", unsafe_allow_html=True)
+    
     for i in range(num_villes):
-        villes[f"ville_{i+1}"] = st.text_input(f"Ville {i+1}:")
+        villes[f"ville_{i+1}"] = st.text_input(f"City {i+1}:")
 
     for i in range(num_villes):
         for j in range(i+1, num_villes):
             while True:
                 try:
                     key_1 = get_unique_key(f'heure_depart_{i}_{j}')
-                    horaire_depart = st.time_input(f"Horaire de départ de {villes[f'ville_{i+1}']} à {villes[f'ville_{j+1}']}: ", key=key_1, value = None)
-                    st.write("Durée du trajet :")
+                    horaire_depart = st.time_input(f"Travel time {villes[f'ville_{i+1}']} to {villes[f'ville_{j+1}']}: ", key=key_1, value = None)
+                    st.write("Travel time :")
                     col1, col2 = st.columns(2)
                     if horaire_depart is not None:
                         heures_key = get_unique_key(f"heures_{i}_{j}")
                         minutes_key = get_unique_key(f"minutes_{i}_{j}")
-                        heures = col1.number_input("Heures:", min_value=0, max_value=40, step=1, key=heures_key)
+                        heures = col1.number_input("Heures:", min_value=0, max_value=50, step=1, key=heures_key)
                         minutes = col2.number_input("Minutes:", min_value=0, max_value=59, step=1, key=minutes_key)
                         duree_trajet_minutes = heures * 60 + minutes
                         duree_trajet = f"{heures}:{minutes}"
@@ -134,7 +137,7 @@ def horaires():
                         horaires_trajets[trajet_key] = {'depart': horaire_depart.strftime("%H:%M"), 'duree': duree_trajet}
                         break
                     else:
-                        st.info(f"L'horaire de départ pour {villes[f'ville_{i+1}']} à {villes[f'ville_{j+1}']} n'a pas été spécifié.")
+                        st.info(f"Departure time {villes[f'ville_{i+1}']} to {villes[f'ville_{j+1}']} has not been specified")
                         break
                 except ValueError:
                     st.error("Format d'heure incorrect. Veuillez entrer une heure au format HH:MM.")
@@ -143,12 +146,12 @@ def horaires():
         for j in range(i+1, num_villes):
             while True:
                 try:
-                    horaire_depart = st.time_input(f" Horaire de départ de {villes[f'ville_{j+1}']} à {villes[f'ville_{i+1}']}: ", key=get_unique_key(f"time_input_{i}{j}"), value = None)
+                    horaire_depart = st.time_input(f" Departure time {villes[f'ville_{j+1}']} to {villes[f'ville_{i+1}']}: ", key=get_unique_key(f"time_input_{i}{j}"), value = None)
                     col1, col2 = st.columns(2)
                     if horaire_depart is not None:
                         heures_key = get_unique_key(f"heures_{j}_{i}")
                         minutes_key = get_unique_key(f"minutes_{j}_{i}")
-                        heures = col1.number_input("Heures:", min_value=0, max_value=40, step=1, key= heures_key)
+                        heures = col1.number_input("Heures:", min_value=0, max_value=50, step=1, key= heures_key)
                         minutes = col2.number_input("Minutes:", min_value=00, max_value=59, step=1, key= minutes_key)
                         if minutes < 10:
                             minutes = '0' + str(minutes)
@@ -181,7 +184,7 @@ def get_days_of_service_all_buses():
     directions = [key for key, value in horaires_trajets.items()]
 
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'pink', 'brown']
-    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thirsday', 'Friday', 'Saturday', 'Sunday', 'Monday']
+    days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thirsday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday']
     midnight_dates = []
     
     dates_noon = []
@@ -258,15 +261,14 @@ def get_days_of_service_all_buses():
                     
     if st.button("Submit"):
                     
-        colors = ['blue', 'red', 'green', 'orange', 'purple', 'pink', 'brown']
-        days_of_week = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche', 'Lundi']
+        colors = ['blue', 'red', 'green', 'orange', 'purple', 'pink', 'brown', 'yellow', 'turquoise', 'lavender']
+        days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday']
         midnight_dates = []
         
         dates_noon = []
         start_date = datetime.now() + timedelta(days=(7 - datetime.now().weekday()))
         start_date += timedelta(days=(7 - start_date.weekday()))  # Pour obtenir le prochain lundi
-        dates = [start_date + timedelta(days=i) for i in range(8)]  # Générer jusqu'au jour 8 inclus
-        
+        dates = [start_date + timedelta(days=i) for i in range(10)]  
         for date in dates:
             midnight_dates.append(date.replace(hour=0, minute=0, second=0, microsecond=0))
             dates_noon.append(date.replace(hour=12, minute=0, second=0, microsecond=0))
@@ -286,8 +288,8 @@ def get_days_of_service_all_buses():
                             if departs_villes[key] != '':
                                 ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
                                 ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                                ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
-                                ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                                #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                                #ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                                 plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 1), colors[key[0]-1])
 
                                 for i, time in enumerate(departs_villes[key]):
@@ -321,10 +323,12 @@ def get_days_of_service_all_buses():
             
             plt.yticks([-1, 1], [f'{villes["ville_2"]}', f'{villes["ville_1"]}'], fontsize = 20)
             plt.xticks(dates_noon, [days_of_week[date.weekday()]  for date in dates], fontsize=20, ha='center', va='center')
-            ax.set_xlim(midnight_dates[0], dates_noon[-1])
+            #ax.set_xlim(midnight_dates[0], dates_noon[-1])
             plt.tick_params(axis='x', which='both', bottom=False, top=True, labelbottom=False, labeltop=True, colors='coral')
             for spine in ax.spines.values():
                 spine.set_visible(False)
+
+            plt.xlim(dates[0], dates[-2])
 
             title_color = 'navy'
             #plt.title(f"Graphicage {villes['ville_1']} - {villes['ville_2']}", y=1.1, color=title_color)
@@ -334,8 +338,7 @@ def get_days_of_service_all_buses():
             buffer.seek(0)
             st.image(buffer, use_column_width=True, caption='Graphicage Image')
             
-
-            fig.set_size_inches(18*0.9, 10*0.9)
+            fig.set_size_inches(18, 10)
             plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
             plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png", bbox_inches='tight')
             plt.close()
@@ -378,9 +381,9 @@ def get_days_of_service_all_buses():
                 if ville_3_2 in key:
                     if value != '':
                         ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         ax.scatter(arrivees_villes[key], [0]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         for i in range(len(departs_villes[key])):
                             plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 0), colors[key[0]-1])
                     
@@ -398,9 +401,9 @@ def get_days_of_service_all_buses():
                 if ville_2_3 in key:
                     if value != '':
                         ax.scatter(departs_villes[key], [0]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         for i in range(len(departs_villes[key])):
                             plot_arrow(ax, (departs_villes[key][i], 0), (arrivees_villes[key][i], -1), colors[key[0]-1])
 
@@ -418,9 +421,9 @@ def get_days_of_service_all_buses():
                 if ville_3_1 in key:
                     if value != '':
                         ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                         ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                         for i in range(len(departs_villes[key])):
                             plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 1), colors[key[0]-1])
                     
@@ -438,9 +441,9 @@ def get_days_of_service_all_buses():
                 if ville_1_3 in key:
                     if value != '':
                         ax.scatter(departs_villes[key], [1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         ax.scatter(arrivees_villes[key], [-1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                         for i in range(len(departs_villes[key])):
                             plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], -1), colors[key[0]-1])
 
@@ -457,9 +460,9 @@ def get_days_of_service_all_buses():
                 if ville_2_1 in key:
                         if value != '':
                             ax.scatter(departs_villes[key], [0]*len(departs_villes[key]),  color=colors[key[0]-1])
-                            ax.plot([departs_villes[key], departs_villes[key]], [0, 1], linestyle='dotted', color='grey', alpha=0.5)
+                            #ax.plot([departs_villes[key], departs_villes[key]], [0, 1], linestyle='dotted', color='grey', alpha=0.5)
                             ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                            ax.plot([arrivees_villes[key], arrivees_villes[key]], [0, 1], linestyle='dotted', color='grey', alpha=0.5)
+                            #ax.plot([arrivees_villes[key], arrivees_villes[key]], [0, 1], linestyle='dotted', color='grey', alpha=0.5)
                             for i in range(len(departs_villes[key])):
                                 plot_arrow(ax, (departs_villes[key][i], 0), (arrivees_villes[key][i], 1), colors[key[0]-1])
                         
@@ -477,9 +480,9 @@ def get_days_of_service_all_buses():
                 if ville_1_2 in key:
                     if value != '':
                         ax.scatter(departs_villes[key], [1]*len(departs_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         ax.scatter(arrivees_villes[key], [0]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                        ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
+                        #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                         for i in range(len(departs_villes[key])):
                             plot_arrow(ax, (departs_villes[key][i], 1), (arrivees_villes[key][i], 0), colors[key[0]-1])
 
@@ -507,9 +510,8 @@ def get_days_of_service_all_buses():
             dates = [start_date + timedelta(days=i) for i in range(8)]  # Générer jusqu'au jour 8 inclus
             for date in midnight_dates:
                 ax.axvline(x=date, color='lightblue', linestyle='-', linewidth=1)  # Modifier la couleur et le style selon vos préférences
-
+            plt.xlim(dates[0], dates[-2])
             title_color = 'navy'
-
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png')
             buffer.seek(0)
@@ -533,6 +535,4 @@ def get_days_of_service_all_buses():
 
 if __name__ == '__main__':
     get_days_of_service_all_buses()
-
-    
 
