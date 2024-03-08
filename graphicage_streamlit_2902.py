@@ -33,7 +33,7 @@ def get_days_of_service(bus_number, direction):
                     "Sunday": 7
                 }
 
-                jours_selectionnes = st.multiselect(f"Circulation day(s) of {bus_number} from {direction.replace('>', 'to')} ?", list(jours_map.keys()))
+                jours_selectionnes = st.multiselect(f"Circulation day(s) of bus {bus_number} from {direction.replace('>', 'to')} ?", list(jours_map.keys()))
                 days = []
                 
                 #if "Everyday" in jours_selectionnes:
@@ -175,12 +175,12 @@ def table(horaires_trajets, num_buses, days_of_services, colors, bbox):
 def table_other_info(additional_info, bbox):
     # Initialize table data and colors
     num_items = len(additional_info)
-    table_cell = [['' for _ in range(2 * num_items)]]
+    table_cell = [['' for _ in range(num_items)]]
 
     # Populate table data and colors
     for i, (key, value) in enumerate(additional_info.items()):
         if value != '':
-            table_cell[0][2*i] = f"{key[1:]} : {value}"
+            table_cell[0][i] = f"{key[1:]} : {value}"
 
     # Create table
     table = plt.table(cellText=table_cell,
@@ -238,13 +238,16 @@ def horaires():
                         minutes_key = get_unique_key(f"minutes_{i}_{j}")
                         heures = col1.number_input("Heures:", min_value=0, max_value=50, step=1, key=heures_key)
                         minutes = col2.number_input("Minutes:", min_value=0, max_value=59, step=1, key=minutes_key)
-                        duree_trajet_minutes = heures * 60 + minutes
                         duree_trajet = f"{heures}:{minutes}"
                         trajet_key = f"{villes[f'ville_{i+1}']} > {villes[f'ville_{j+1}']}"
                         horaires_trajets[trajet_key] = {'depart': horaire_depart.strftime("%H:%M"), 'duree': duree_trajet}
+                        print(f"horaire_trajets 1111 : {horaires_trajets.keys()}")
                         break
+                        
                     else:
                         st.info(f"Departure time {villes[f'ville_{i+1}']} to {villes[f'ville_{j+1}']} has not been specified")
+                        trajet_key = f"{villes[f'ville_{i+1}']} > {villes[f'ville_{j+1}']}"
+                        horaires_trajets[trajet_key] = {'depart': '', 'duree': ''}
                         break
                 except ValueError:
                     st.error("Format d'heure incorrect. Veuillez entrer une heure au format HH:MM.")
@@ -263,19 +266,16 @@ def horaires():
                         minutes = col2.number_input("Minutes:", min_value=00, max_value=59, step=1, key= minutes_key)
                         if minutes < 10:
                             minutes = '0' + str(minutes)
-                        if horaire_depart:
-                            if duree_trajet:
-                                trajet_key_inverse = f"{villes[f'ville_{j+1}']} > {villes[f'ville_{i+1}']}"
-                                horaires_trajets[trajet_key_inverse] = {'depart': horaire_depart, 'duree': duree_trajet}
-                                break
-                            else:
-                                st.error("Format de durée de trajet incorrect. Veuillez entrer une durée au format HH:MM.")
-                        else:
-                            st.error("Format d'heure de départ incorrect. Veuillez entrer une heure au format HH:MM.")
+                        
+                        trajet_key_inverse = f"{villes[f'ville_{j+1}']} > {villes[f'ville_{i+1}']}"
+                        horaires_trajets[trajet_key_inverse] = {'depart': horaire_depart, 'duree': duree_trajet}
+                        print(f"horaire_trajets inverse 1111 : {horaires_trajets.keys()}")
+                        break
+                            
                     else:
-                        trajet_key_inverse = f"{villes[f'ville_{j+1}']}_{villes[f'ville_{i+1}']}"
+                        trajet_key_inverse = f"{villes[f'ville_{j+1}']} > {villes[f'ville_{i+1}']}"
                         horaires_trajets[trajet_key_inverse] = {'depart': '', 'duree': ''}
-                        st.warning(f"Les horaires ne seront pas enregistrés pour {villes[f'ville_{i+1}']} à {villes[f'ville_{j+1}']} car l'horaire de départ est vide.")
+                        st.info(f"Departure time {villes[f'ville_{j+1}']} to {villes[f'ville_{i+1}']} has not been specified")
                         break
                 except ValueError:
                     st.error("Format d'heure incorrect. Veuillez entrer une heure au format HH:MM.")
@@ -290,6 +290,7 @@ def get_days_of_service_all_buses():
     departs_villes = {}
     arrivees_villes = {}
     directions = [key for key, value in horaires_trajets.items()]
+    print(f"directiooooooons {directions}")
 
     colors = ['blue', 'red', 'green', 'orange', 'purple', 'pink', 'brown']
     days_of_week = ['Monday', 'Tuesday', 'Wednesday', 'Thirsday', 'Friday', 'Saturday', 'Sunday', 'Monday', 'Tuesday']
@@ -321,7 +322,7 @@ def get_days_of_service_all_buses():
                 days_of_service_villes[(i+1, j+1, direction)] = days_of_services[(i+1, direction)] 
                 departs_villes[(i+1, j+1, direction)] = [date for k, date in enumerate(dates) if (k + 1) in days_of_service_villes[(i+1, j+1, direction)]] if days_of_service_villes[(i+1, j+1, direction)] else ''
                 arrivees_villes[(i+1, j+1, direction)] = [date for k, date in enumerate(dates) if (k + 1) in days_of_service_villes[(i+1, j+1, direction)]] if days_of_service_villes[(i+1, j+1, direction)] else ''
-    
+                print(f"depart viiiiiiiiiilles {departs_villes}")
     for key, value in horaires_trajets.items():
         for k, v in departs_villes.items():
             if key == k[2]:
@@ -457,7 +458,7 @@ def get_days_of_service_all_buses():
             y = 0
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
-            bbox = [x+0.05,y+0.99,1.1,0.1]
+            bbox = [x,y+0.99,1,0.1]
             table_other_info(additional_info, bbox)
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png')
@@ -475,36 +476,45 @@ def get_days_of_service_all_buses():
 
         if num_villes == 3:
             fig, ax = plt.subplots(figsize=(20, 15))
-
-            if list(departs_villes.values())[0] != '':
+            print(f"departs villes {departs_villes}")
+            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 0):
                 ville_1_2 = list(departs_villes.keys())[0][2]
+                print("12")
+                print(ville_1_2)
+                print(list(departs_villes.values())[i])
             else: 
                 ville_1_2 = 'not a key'
-            if list(departs_villes.values())[3] != '':
+            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 3):
                 ville_2_1 = list(departs_villes.keys())[3][2]
-            else:
+                print(list(departs_villes.values())[i])
+            else: 
                 ville_2_1 = 'not a key'
-            if list(departs_villes.values())[1] != '':
+            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 1):
                 ville_1_3 = list(departs_villes.keys())[1][2]
-            else:
+                print(list(departs_villes.values())[i])
+            else: 
                 ville_1_3 = 'not a key'
-            if list(departs_villes.values())[4] != '':
+            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 4):
                 ville_3_1 = list(departs_villes.keys())[4][2]
-            else:
+                print(list(departs_villes.values())[i])
+            else: 
                 ville_3_1 = 'not a key'
-            if list(departs_villes.values())[2] != '':
+            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 2):
                 ville_2_3 = list(departs_villes.keys())[2][2]
-            else:
+                print(list(departs_villes.values())[i])
+            else: 
                 ville_2_3 = 'not a key'
-            if list(departs_villes.values())[5] != '':
+            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 5):
                 ville_3_2 = list(departs_villes.keys())[5][2]
-            else:
+                print(list(departs_villes.values())[i])
+            else: 
                 ville_3_2 = 'not a key'
             
             # Afficher la première valeur des clés contenant cet élément
             for key, value in departs_villes.items():
                 if ville_3_2 in key:
                     if value != '':
+                        print(value)
                         ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
                         #ax.plot([departs_villes[key], departs_villes[key]], [-1, 0], linestyle='dotted', color='grey', alpha=0.5)
                         ax.scatter(arrivees_villes[key], [0]*len(arrivees_villes[key]),  color=colors[key[0]-1])
@@ -560,7 +570,7 @@ def get_days_of_service_all_buses():
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, 1.07),
+                                (time, 1.10),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
             
                 if ville_1_3 in key:
@@ -574,12 +584,12 @@ def get_days_of_service_all_buses():
 
                         for i, time in enumerate(departs_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                        (time, 1.04),
+                                        (time, 1.03),
                                 textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, -1.03),
+                                (time, -1.005),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
                 if ville_2_1 in key:
@@ -594,12 +604,12 @@ def get_days_of_service_all_buses():
 
                             for i, time in enumerate(departs_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                            (time, -0.02),
+                                            (time, -0.08),
                                     textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                             
                             for i, time in enumerate(arrivees_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                    (time, 1.06),
+                                    (time, 1.105),
                                     textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
                 if ville_1_2 in key:
@@ -657,7 +667,7 @@ def get_days_of_service_all_buses():
             y = 0
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
-            bbox = [x+0.05,y+0.99,1,0.1]
+            bbox = [x,y+0.99,1,0.1]
             table_other_info(additional_info, bbox)
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png')
