@@ -263,6 +263,7 @@ def horaires():
                         minutes_key = get_unique_key(f"minutes_{j}_{i}")
                         heures = col1.number_input("Heures:", min_value=0, max_value=50, step=1, key= heures_key)
                         minutes = col2.number_input("Minutes:", min_value=00, max_value=59, step=1, key= minutes_key)
+                        duree_trajet = f"{heures}:{minutes}"
                         if minutes < 10:
                             minutes = '0' + str(minutes)
                         
