@@ -33,7 +33,7 @@ def get_days_of_service(bus_number, direction):
                     "Sunday": 7
                 }
 
-                jours_selectionnes = st.multiselect(f"Circulation day(s) of bus {bus_number} from {direction.replace('>', 'to')} ?", list(jours_map.keys()))
+                jours_selectionnes = st.multiselect(f"Circulation day(s) of {bus_number} from {direction.replace('>', 'to')} ?", list(jours_map.keys()))
                 days = []
                 
                 #if "Everyday" in jours_selectionnes:
@@ -118,11 +118,11 @@ def get_binary_file_downloader_html(bin_file, file_label='File'):
     href = f'<a href="data:application/octet-stream;base64,{b64}" download="{bin_file}">{file_label}</a>'
     return href
 
-def get_image_download_link(buffer, filename):
-    """Generate a download link for the image."""
+def get_image_download_button(buffer, filename):
+    """Generate a download button for the image."""
     buffer_str = base64.b64encode(buffer).decode()
-    href = f'<a href="data:image/png;base64,{buffer_str}" download="{filename}">Download Image</a>'
-    return href
+    button = f'<button><a href="data:image/png;base64,{buffer_str}" download="{filename}">📥 Download Image</a></button>'
+    return button
 
 def table(horaires_trajets, num_buses, days_of_services, colors, bbox):
     table_cell = [['' for _ in range(len(horaires_trajets) + 1)] for _ in range(num_buses + 1)]
@@ -175,12 +175,12 @@ def table(horaires_trajets, num_buses, days_of_services, colors, bbox):
 def table_other_info(additional_info, bbox):
     # Initialize table data and colors
     num_items = len(additional_info)
-    table_cell = [['' for _ in range(num_items)]]
+    table_cell = [['' for _ in range(2 * num_items)]]
 
     # Populate table data and colors
     for i, (key, value) in enumerate(additional_info.items()):
         if value != '':
-            table_cell[0][i] = f"{key[1:]} : {value}"
+            table_cell[0][2*i] = f"{key[1:]} : {value}"
 
     # Create table
     table = plt.table(cellText=table_cell,
@@ -238,15 +238,13 @@ def horaires():
                         minutes_key = get_unique_key(f"minutes_{i}_{j}")
                         heures = col1.number_input("Heures:", min_value=0, max_value=50, step=1, key=heures_key)
                         minutes = col2.number_input("Minutes:", min_value=0, max_value=59, step=1, key=minutes_key)
+                        duree_trajet_minutes = heures * 60 + minutes
                         duree_trajet = f"{heures}:{minutes}"
                         trajet_key = f"{villes[f'ville_{i+1}']} > {villes[f'ville_{j+1}']}"
                         horaires_trajets[trajet_key] = {'depart': horaire_depart.strftime("%H:%M"), 'duree': duree_trajet}
                         break
-                        
                     else:
                         st.info(f"Departure time {villes[f'ville_{i+1}']} to {villes[f'ville_{j+1}']} has not been specified")
-                        trajet_key = f"{villes[f'ville_{i+1}']} > {villes[f'ville_{j+1}']}"
-                        horaires_trajets[trajet_key] = {'depart': '', 'duree': ''}
                         break
                 except ValueError:
                     st.error("Format d'heure incorrect. Veuillez entrer une heure au format HH:MM.")
@@ -263,18 +261,21 @@ def horaires():
                         minutes_key = get_unique_key(f"minutes_{j}_{i}")
                         heures = col1.number_input("Heures:", min_value=0, max_value=50, step=1, key= heures_key)
                         minutes = col2.number_input("Minutes:", min_value=00, max_value=59, step=1, key= minutes_key)
-                        duree_trajet = f"{heures}:{minutes}"
                         if minutes < 10:
                             minutes = '0' + str(minutes)
-                        
-                        trajet_key_inverse = f"{villes[f'ville_{j+1}']} > {villes[f'ville_{i+1}']}"
-                        horaires_trajets[trajet_key_inverse] = {'depart': horaire_depart, 'duree': duree_trajet}
-                        break
-                            
+                        if horaire_depart:
+                            if duree_trajet:
+                                trajet_key_inverse = f"{villes[f'ville_{j+1}']} > {villes[f'ville_{i+1}']}"
+                                horaires_trajets[trajet_key_inverse] = {'depart': horaire_depart, 'duree': duree_trajet}
+                                break
+                            else:
+                                st.error("Format de durée de trajet incorrect. Veuillez entrer une durée au format HH:MM.")
+                        else:
+                            st.error("Format d'heure de départ incorrect. Veuillez entrer une heure au format HH:MM.")
                     else:
-                        trajet_key_inverse = f"{villes[f'ville_{j+1}']} > {villes[f'ville_{i+1}']}"
+                        trajet_key_inverse = f"{villes[f'ville_{j+1}']}_{villes[f'ville_{i+1}']}"
                         horaires_trajets[trajet_key_inverse] = {'depart': '', 'duree': ''}
-                        st.info(f"Departure time {villes[f'ville_{j+1}']} to {villes[f'ville_{i+1}']} has not been specified")
+                        st.warning(f"Les horaires ne seront pas enregistrés pour {villes[f'ville_{i+1}']} à {villes[f'ville_{j+1}']} car l'horaire de départ est vide.")
                         break
                 except ValueError:
                     st.error("Format d'heure incorrect. Veuillez entrer une heure au format HH:MM.")
@@ -320,6 +321,7 @@ def get_days_of_service_all_buses():
                 days_of_service_villes[(i+1, j+1, direction)] = days_of_services[(i+1, direction)] 
                 departs_villes[(i+1, j+1, direction)] = [date for k, date in enumerate(dates) if (k + 1) in days_of_service_villes[(i+1, j+1, direction)]] if days_of_service_villes[(i+1, j+1, direction)] else ''
                 arrivees_villes[(i+1, j+1, direction)] = [date for k, date in enumerate(dates) if (k + 1) in days_of_service_villes[(i+1, j+1, direction)]] if days_of_service_villes[(i+1, j+1, direction)] else ''
+    
     for key, value in horaires_trajets.items():
         for k, v in departs_villes.items():
             if key == k[2]:
@@ -455,47 +457,48 @@ def get_days_of_service_all_buses():
             y = 0
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
-            bbox = [x,y+0.982,1,0.1]
+            bbox = [x+0.05,y+0.99,1.1,0.1]
             table_other_info(additional_info, bbox)
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png')
             buffer.seek(0)
-            st.image(buffer, use_column_width=True, caption='Graphicage Image')
+            filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png"  # Define the filename for the graph image
+            image_bytes = buffer.getvalue()
+            st.markdown(get_image_download_button(image_bytes, filename=filename), unsafe_allow_html=True)
+            st.image(buffer, use_column_width=True)
             fig.set_size_inches(20*0.5, 15*0.5)
             plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
             plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png", bbox_inches='tight')
             plt.close()
 
-            filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']}.png"  # Define the filename for the graph image
-            image_bytes = buffer.getvalue()
-            st.markdown(get_image_download_link(image_bytes, filename=filename), unsafe_allow_html=True)
-
+            
 
         if num_villes == 3:
             fig, ax = plt.subplots(figsize=(20, 15))
-            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 0):
+
+            if list(departs_villes.values())[0] != '':
                 ville_1_2 = list(departs_villes.keys())[0][2]
             else: 
                 ville_1_2 = 'not a key'
-            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 3):
+            if list(departs_villes.values())[3] != '':
                 ville_2_1 = list(departs_villes.keys())[3][2]
-            else: 
+            else:
                 ville_2_1 = 'not a key'
-            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 1):
+            if list(departs_villes.values())[1] != '':
                 ville_1_3 = list(departs_villes.keys())[1][2]
-            else: 
+            else:
                 ville_1_3 = 'not a key'
-            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 4):
+            if list(departs_villes.values())[4] != '':
                 ville_3_1 = list(departs_villes.keys())[4][2]
-            else: 
+            else:
                 ville_3_1 = 'not a key'
-            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 2):
+            if list(departs_villes.values())[2] != '':
                 ville_2_3 = list(departs_villes.keys())[2][2]
-            else: 
+            else:
                 ville_2_3 = 'not a key'
-            if any(list(departs_villes.values())[i] != '' for i in range(len(list(departs_villes.values()))) if i % 6 == 5):
+            if list(departs_villes.values())[5] != '':
                 ville_3_2 = list(departs_villes.keys())[5][2]
-            else: 
+            else:
                 ville_3_2 = 'not a key'
             
             # Afficher la première valeur des clés contenant cet élément
@@ -557,7 +560,7 @@ def get_days_of_service_all_buses():
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, 1.10),
+                                (time, 1.07),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
             
                 if ville_1_3 in key:
@@ -571,12 +574,12 @@ def get_days_of_service_all_buses():
 
                         for i, time in enumerate(departs_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                        (time, 1.03),
+                                        (time, 1.04),
                                 textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, -1.0),
+                                (time, -1.03),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
                 if ville_2_1 in key:
@@ -591,12 +594,12 @@ def get_days_of_service_all_buses():
 
                             for i, time in enumerate(departs_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                            (time, -0.08),
+                                            (time, -0.02),
                                     textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                             
                             for i, time in enumerate(arrivees_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                    (time, 1.105),
+                                    (time, 1.06),
                                     textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
                 if ville_1_2 in key:
@@ -627,7 +630,7 @@ def get_days_of_service_all_buses():
             
             plt.xticks(dates_noon, [days_of_week[date.weekday()] for date in dates], fontsize=20, ha='center', va='center', color = '#054752')
             plt.tick_params(axis='x', which='both', bottom=False, top=True, labelbottom=False, labeltop=True, colors='#054752')
-            plt.gca().xaxis.set_tick_params(pad=-70)
+            plt.gca().xaxis.set_tick_params(pad=-30)
             x_min, x_max = plt.xlim()
             y_min, y_max = plt.ylim()
             rect_x = x_min - 0.05
@@ -654,21 +657,21 @@ def get_days_of_service_all_buses():
             y = 0
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
-            bbox = [x,y+0.955,1,0.1]
+            bbox = [x+0.05,y+0.99,1,0.1]
             table_other_info(additional_info, bbox)
             buffer = io.BytesIO()
             plt.savefig(buffer, format='png')
             buffer.seek(0)
-            st.image(buffer, use_column_width=True, caption='Graphicage Image')
+            filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']} -  {villes['ville_3']}.png"  # Define the filename for the graph image
+            image_bytes = buffer.getvalue()
+            st.markdown(get_image_download_button(image_bytes, filename=filename), unsafe_allow_html=True)
+            st.image(buffer, use_column_width=True)
             fig.set_size_inches(20*0.5, 15*0.5)
             plt.subplots_adjust(left=0.15, right=0.9, top=0.9, bottom=0.3)
             plt.savefig(f"Graphicage {villes['ville_1']} - {villes['ville_2']} -  {villes['ville_3']}.png", bbox_inches='tight')
             plt.close()
 
-            filename = f"Graphicage {villes['ville_1']} - {villes['ville_2']} -  {villes['ville_3']}.png"  # Define the filename for the graph image
-            image_bytes = buffer.getvalue()
-            st.markdown(get_image_download_link(image_bytes, filename=filename), unsafe_allow_html=True)
-
+            
             
 
     
