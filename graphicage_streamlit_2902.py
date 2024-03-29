@@ -76,7 +76,7 @@ def number_buses():
 def graphicage_hlp():
     while True:
         try:
-            choice = st.sidebar.radio("How many stops ? 🚏", options=[2, 3], format_func=lambda x: f"{x}")
+            choice = st.sidebar.radio("How many cities ? 🚏", options=[2, 3], format_func=lambda x: f"{x}")
             #st.write("Choix sélectionné :", choice)
             if choice == 2:
                 num_villes = 2
@@ -220,7 +220,7 @@ def horaires():
     villes = {}
     horaires_trajets = {}
 
-    st.write("<div style='font-size:30px;'><b> 🚏 Stops</b></div>", unsafe_allow_html=True)
+    st.write("<div style='font-size:30px;'><b> 🚏 Cities </b></div>", unsafe_allow_html=True)
     
     for i in range(num_villes):
         villes[f"ville_{i+1}"] = st.text_input(f"City {i+1}:")
@@ -398,7 +398,7 @@ def get_days_of_service_all_buses():
                                             textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                             for i, time in enumerate(arrivees_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                            (time, -1.07),
+                                            (time, -1.0),
                                             textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
             
 
@@ -529,7 +529,7 @@ def get_days_of_service_all_buses():
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, -1.02),
+                                (time, -0.98),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
 
@@ -550,7 +550,7 @@ def get_days_of_service_all_buses():
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, 1.07),
+                                (time, 1.1),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
             
                 if ville_1_3 in key:
@@ -584,12 +584,12 @@ def get_days_of_service_all_buses():
 
                             for i, time in enumerate(departs_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                            (time, -0.02),
+                                            (time, -0.07),
                                     textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                             
                             for i, time in enumerate(arrivees_villes[key]):
                                 ax.annotate(f"{time.strftime('%H:%M')}",
-                                    (time, 1.06),
+                                    (time, 1.1),
                                     textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
                 if ville_1_2 in key:
@@ -610,7 +610,7 @@ def get_days_of_service_all_buses():
                         
                         for i, time in enumerate(arrivees_villes[key]):
                             ax.annotate(f"{time.strftime('%H:%M')}",
-                                (time, -0.03),
+                                (time, -0.01),
                                 textcoords="offset points", xytext=(0, -20), ha='center', fontsize=8)
 
 
@@ -669,5 +669,3 @@ def get_days_of_service_all_buses():
 
 if __name__ == '__main__':
     get_days_of_service_all_buses()
-
-    
