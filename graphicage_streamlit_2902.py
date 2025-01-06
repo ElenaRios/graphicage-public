@@ -19,7 +19,7 @@ def validate_duration_format(duration_str):
     return re.match(r'^([0-9]|[0-9][0-9]|[1-9][0-9][0-9]+):([0-5]\d)$', duration_str)
 
 
-def get_days_of_service(bus_number, direction):
+def get_days_of_service(bus_number, direction, service_code, departure_time):
     while True:
         try:
             while True:  # Boucle interne pour gérer les jours invalides
@@ -33,7 +33,7 @@ def get_days_of_service(bus_number, direction):
                     "Sunday": 7
                 }
 
-                jours_selectionnes = st.multiselect(f"Circulation day(s) of bus {bus_number} from {direction.replace('>', 'to')} ?", list(jours_map.keys()))
+                jours_selectionnes = st.multiselect(f"Circulation day(s) of bus {bus_number} for service {service_code} & departure at {departure_time}", list(jours_map.keys()))
                 days = []
                 
                 for jour in jours_selectionnes:
@@ -88,15 +88,15 @@ widget_counter = 0
 def additional_info_optional():
     bus_partner = st.sidebar.text_input(f"🤝 Bus Partner")
     depot = st.sidebar.text_input(f"🏠 Deposit")
-     #min_date = datetime.strptime('01/01/2022', '%d/%m/%Y')
-    service_number = st.sidebar.text_input("🚍 Service numbers")
+    #min_date = datetime.strptime('01/01/2022', '%d/%m/%Y')
+    #service_number = st.sidebar.text_input("🚍 Service numbers")
     #other = st.sidebar.text_input(f"📝 Comments")
     additional_info = {
         '🤝 Bus Partner': bus_partner,
-        '🏠 Deposit': depot,
-        'Service numbers': service_number
+        '🏠 Deposit': depot
+        #'Start date': min_date
     }
-    return bus_partner, depot, service_number, additional_info
+    return bus_partner, depot, additional_info
 
 
 
@@ -118,52 +118,57 @@ def get_image_download_button(buffer, filename):
     return button
 
 def table(horaires_trajets, num_buses, days_of_services, colors, bbox):
-    table_cell = [['' for _ in range(len(horaires_trajets) + 1)] for _ in range(num_buses + 1)]
-    table_colors = [['black' for _ in range(len(horaires_trajets) + 1)] for _ in range(num_buses + 1)]
-    
-    # Populate headers
-    headers = list(horaires_trajets.keys())
-    table_cell[0][1:] = headers
+    # Initialisation du tableau
+    service_codes = sorted(set(trajet['service_code'] for trajet in horaires_trajets.values()))
+    table_cell = [['' for _ in range(len(service_codes) + 1)] for _ in range(num_buses + 1)]
+    table_colors = [['black' for _ in range(len(service_codes) + 1)] for _ in range(num_buses + 1)]
 
-    # Populate table data and colors
-    for i in range(num_buses):
-        table_cell[i + 1][0] = f'Bus {i + 1}'
-        for j, key in enumerate(headers):
-            days_services = ''
-            for d in days_of_services.get((i + 1, key), ''):
-                days_services = days_services + str(d) + ' '
-            table_cell[i + 1][j + 1] = days_services
-            table_colors[i + 1][j + 1] = colors[i]
-    
-    # Create table
-    table = plt.table(cellText=table_cell,
-                      cellLoc='center',
-                      loc='lower right',
-                      bbox=bbox)
-    
-    # Set cell colors
+    # En-têtes : première ligne avec les service_codes
+    table_cell[0][1:] = service_codes
+
+    # Remplissage des données
+    for bus_num in range(1, num_buses + 1):
+        table_cell[bus_num][0] = f'Bus {bus_num}'  # Numéro du bus
+        for j, code in enumerate(service_codes):
+            # Récupérer les jours de service pour ce bus et ce service
+            days = [
+                day
+                for (bus, trajet_key), service_days in days_of_services.items()
+                if bus == bus_num and horaires_trajets[trajet_key]['service_code'] == code
+                for day in service_days
+            ]
+            # Insérer les jours triés et sans doublons dans la cellule correspondante
+            table_cell[bus_num][j + 1] = ' '.join(map(str, sorted(set(days))))
+            table_colors[bus_num][j + 1] = colors[bus_num - 1]  # Couleur pour chaque bus
+
+    # Création du tableau avec Matplotlib
+    table = plt.table(
+        cellText=table_cell,
+        cellLoc='center',
+        loc='lower right',
+        bbox=bbox
+    )
+
+    # Définir les couleurs des cellules
     for i in range(len(table_cell)):
         for j in range(len(table_cell[i])):
             cell = table[i, j]
-            cell_text = table_cell[i][j]
-            cell_color = table_colors[i][j]
-            cell.get_text().set_color(cell_color)
-    
-    
-    # Set border between first and second row
+            cell.get_text().set_color(table_colors[i][j])
+
+    # Bordures et style
     for i in range(len(table_cell)):
         for j in range(len(table_cell[i])):
-            # Outline the entire first column
             cell = table[i, j]
             cell.set_edgecolor('lightgrey')
             cell.set_linewidth(1)
-    
-    # Adjust font size
-    table.auto_set_font_size(False)  # Disable font size auto-scaling
-    table.set_fontsize(9)  # Set the font size manually
-    
-    # Show plot
-    plt.show() 
+
+    # Ajustement de la taille de la police
+    table.auto_set_font_size(False)
+    table.set_fontsize(10)
+
+    # Afficher le graphique
+    plt.show()
+
 
 def table_other_info(additional_info, bbox):
     # Initialize table data and colors
@@ -208,7 +213,7 @@ def table_other_info(additional_info, bbox):
 def horaires():
     num_villes = graphicage_hlp()
     num_buses = number_buses()
-    bus_partner, depot, odc, additional_info = additional_info_optional()
+    bus_partner, depot, additional_info = additional_info_optional()
 
     villes = {}
     horaires_trajets = {}
@@ -218,15 +223,17 @@ def horaires():
     # Entrée des villes
     for i in range(num_villes):
         villes[f"ville_{i+1}"] = st.text_input(f"City {i+1}:")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("<div style='font-size:30px;'><b>🕒 Departure times and durations", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     
     # Traitement des combinaisons de villes où l'ordre compte
     for i in range(num_villes):
         for j in range(num_villes):
             if i != j:  # S'assurer que la ville de départ et d'arrivée ne sont pas les mêmes
-                # Début d'un bloc pour une combinaison de villes
-                st.markdown("<hr style='border: 1.5px solid #054752;'>", unsafe_allow_html=True)
-                st.subheader(f"🚍 Trip: {villes[f'ville_{i+1}']} ➡ {villes[f'ville_{j+1}']}")
                 
+                st.write(f"<div style='font-size:20px;'><b> 🚍 Trip: {villes[f'ville_{i+1}']} ➡ {villes[f'ville_{j+1}']}</b></div>", unsafe_allow_html=True)
                 # Heure de départ
                 horaire_depart = st.time_input(
                     f"Departure time from {villes[f'ville_{i+1}']} to {villes[f'ville_{j+1}']}:", 
@@ -236,7 +243,8 @@ def horaires():
 
                 if horaire_depart:
                     # Saisie de la durée
-                    st.markdown("### Duration")
+                    st.write("<div style='font-size:20px;'><b> Duration </b></div>", unsafe_allow_html=True)
+
                     col1, col2 = st.columns(2)
                     heures = col1.number_input(
                         "Heures:", min_value=0, max_value=50, step=1, 
@@ -249,12 +257,20 @@ def horaires():
 
                     duree_trajet = f"{heures:02d}:{minutes:02d}"
                     trajet_key = f"{villes[f'ville_{i+1}']} > {villes[f'ville_{j+1}']}"
+                    service_code = st.text_input(
+                        f"Service code:", 
+                        key=get_unique_key(f"service_code_{i}_{j}")
+                    )
+
+                    if not service_code:
+                        st.error("The service code is required!")
                     
                     # Sauvegarde du trajet
                     horaires_trajets[trajet_key] = {
                         'villes': f'ville_{i+1}_{j+1}',
                         'depart': horaire_depart.strftime("%H:%M"),
-                        'duree': duree_trajet
+                        'duree': duree_trajet,
+                        'service_code': service_code
                     }
                     st.success(f"Travel time recorded: **{duree_trajet}**")
 
@@ -272,13 +288,22 @@ def horaires():
                             f"Additional departure time from {villes[f'ville_{i+1}']} to {villes[f'ville_{j+1}']}:", 
                             key=get_unique_key(f"additional_departure_{i}_{j}_{additional_count}")
                         )
+
+                        additional_service_code = st.text_input(
+                            f"Service code for additional departure:", 
+                            key=get_unique_key(f"additional_service_code_{i}_{j}_{additional_count}")
+                        )
+
+                        if not additional_service_code:
+                            st.error("The service code is required!")
                         
                         # Ajout de l'heure et de la durée supplémentaires pour le même trajet
                         additional_key = f"{trajet_key}_H{additional_count+1}"
                         horaires_trajets[additional_key] = {
                             'villes': f'ville_{i+1}_{j+1}',
                             'depart': additional_depart.strftime("%H:%M"),
-                            'duree': duree_trajet
+                            'duree': duree_trajet,
+                            'service_code': additional_service_code
                         }
 
                         # Nouvelle ligne fine entre horaires
@@ -289,6 +314,8 @@ def horaires():
                             key=get_unique_key(f"add_another_departure_{i}_{j}_{additional_count}")
                         )
                         additional_count += 1
+                    #st.markdown("<hr style='border: 1.5px solid #054752;'>", unsafe_allow_html=True) 
+                    
 
                 else:
                     st.warning(f"Departure time for {villes[f'ville_{i+1}']} ➡ {villes[f'ville_{j+1}']} not provided")
@@ -317,12 +344,16 @@ def get_days_of_service_all_buses():
     
     
     days_of_services = {}
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.write("<div style='font-size:30px;'><b> 🗓️ Circulation days </b></div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
     for i in range(num_buses):
         for key, value in horaires_trajets.items():
             if value['depart'] == '':
                 days_of_services[(i+1, key)] = ''
             else:
-                days_of_services[(i+1, key)] = get_days_of_service(i+1, key)
+                days_of_services[(i+1, key)] = get_days_of_service(i+1, key,service_code=value['service_code'], departure_time=value['depart'])
     days_of_service_villes = {}
 
     for i in range(num_buses):
@@ -458,7 +489,7 @@ def get_days_of_service_all_buses():
             width_unit = 0.03
             x = 0
             y = 0
-
+            
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
             bbox = [x+0.05,y+0.99,1.1,0.1]
@@ -634,7 +665,7 @@ def get_days_of_service_all_buses():
 
             length_unit = 0.15
             width_unit = 0.03
-            x = 0
+            x = -0.2
             y = 0
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
@@ -935,9 +966,9 @@ def get_days_of_service_all_buses():
             title_obj = plt.gca().title
             title_obj.set_bbox(dict(facecolor='white', edgecolor='coral', boxstyle='round,pad=0.8'))
 
-            length_unit = 0.11
+            length_unit = 0.08
             width_unit = 0.03
-            x = -0.16
+            x = 0
             y = 0
             bbox = [x,y,length_unit*(len(horaires_trajets.keys())+1),width_unit*(num_buses+1)]
             table(horaires_trajets, num_buses, days_of_services, colors, bbox)
