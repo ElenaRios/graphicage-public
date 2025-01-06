@@ -489,7 +489,7 @@ def get_days_of_service_all_buses():
                                 ax.scatter(departs_villes[key], [0]*len(departs_villes[key]),  color=colors[key[0]-1])
                                 #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                                 #ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
-                                plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 1), colors[key[0]-1])
+                                plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 0), colors[key[0]-1])
 
                                 for i, time in enumerate(departs_villes[key]):
                                     ax.annotate(f"{time.strftime('%H:%M')}",
