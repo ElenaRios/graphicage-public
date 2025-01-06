@@ -485,8 +485,8 @@ def get_days_of_service_all_buses():
                     if key[1] == 1:
                         for i in range(len(arrivees_villes[key])):
                             if departs_villes[key] != '':
-                                ax.scatter(arrivees_villes[key], [1]*len(arrivees_villes[key]),  color=colors[key[0]-1])
-                                ax.scatter(departs_villes[key], [0]*len(departs_villes[key]),  color=colors[key[0]-1])
+                                ax.scatter(arrivees_villes[key], [0]*len(arrivees_villes[key]),  color=colors[key[0]-1])
+                                ax.scatter(departs_villes[key], [-1]*len(departs_villes[key]),  color=colors[key[0]-1])
                                 #ax.plot([arrivees_villes[key], arrivees_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                                 #ax.plot([departs_villes[key], departs_villes[key]], [-1, 1], linestyle='dotted', color='grey', alpha=0.5)
                                 plot_arrow(ax, (departs_villes[key][i], -1), (arrivees_villes[key][i], 0), colors[key[0]-1])
@@ -497,7 +497,7 @@ def get_days_of_service_all_buses():
                                                 textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
                                 for i, time in enumerate(arrivees_villes[key]):
                                     ax.annotate(f"{time.strftime('%H:%M')}",
-                                                (time, 1.01),
+                                                (time, 0.01),
                                                 textcoords="offset points", xytext=(0, 5), ha='center', fontsize=8)
 
                 if key[3] == 'ville_2_3':
